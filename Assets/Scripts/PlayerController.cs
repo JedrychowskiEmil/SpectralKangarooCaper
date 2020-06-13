@@ -32,6 +32,7 @@ public class PlayerController : MonoBehaviour
     public Sprite[] flowers;
     public Sprite[] mazeBoxesDown;
     public Sprite[] mazeBoxesTop;
+    public Color32[] levelColor;
 
     public GameObject[] mazes;
 
@@ -49,6 +50,7 @@ public class PlayerController : MonoBehaviour
         UIgoToMenu.gameObject.SetActive(false);
         UIplayAgain.gameObject.SetActive(false);
         UIgoToMenu.gameObject.SetActive(false);
+
     }
 
 
@@ -83,6 +85,25 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void GainScore(string sound)
+    {
+        score++;
+        SoundController.playSound(sound);
+    }
+
+    private void GameOver(string sound)
+    {
+        isAlive = false;
+        SoundController.playSound(sound);
+        UIscoreAfterDeath.text = "Score " + score;
+        UIscore.gameObject.SetActive(false);
+        UIscoreAfterDeath.gameObject.SetActive(true);
+        UIgameover.gameObject.SetActive(true);
+        UIgoToMenu.gameObject.SetActive(true);
+        UIplayAgain.gameObject.SetActive(true);
+        UIgoToMenu.gameObject.SetActive(true);
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if(collision.tag == "Respawn")
@@ -91,13 +112,13 @@ public class PlayerController : MonoBehaviour
             float y = collision.transform.position.y;
             collision.transform.position = new Vector2(x, y);
 
-            score++;
-            SoundController.playSound("score");
+            GainScore("jingle");
+
             currentPassedFloors++;
             spawnMaze(x, y);
             if (currentPassedFloors >= floorsToSpriteChange)
             {
-                if(currentPassedFloors - floorsToSpriteChange == 2)
+                if(currentPassedFloors - floorsToSpriteChange == 3)
                 {
                     currentPassedFloors = 0;
                     nextLevel = (nextLevel + 1) % floors.Length;
@@ -133,25 +154,29 @@ public class PlayerController : MonoBehaviour
                 }
 
             }
+        }else if (collision.tag == "Gem")
+        {
+            GainScore("score");
+            Destroy(collision.gameObject);
+        }else if (collision.tag == "Spike")
+        {
+            animator.SetInteger("Death", 1);
+            GameOver("fall");
+
         }
 
 
     }
 
 
+
+
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.tag == "MainCamera")
         {
-            isAlive = false;
-            SoundController.playSound("hit");
-            UIscoreAfterDeath.text = "Score " + score;
-            UIscore.gameObject.SetActive(false);
-            UIscoreAfterDeath.gameObject.SetActive(true);
-            UIgameover.gameObject.SetActive(true);
-            UIgoToMenu.gameObject.SetActive(true);
-            UIplayAgain.gameObject.SetActive(true);
-            UIgoToMenu.gameObject.SetActive(true);
+            GameOver("hit");
         }
     }
 
@@ -169,8 +194,11 @@ public class PlayerController : MonoBehaviour
                         case "BoxDown":
                             child.GetComponent<SpriteRenderer>().sprite = mazeBoxesDown[nextLevel];
                             break;
-                        case "BoxTop":
-                            child.GetComponent<SpriteRenderer>().sprite = mazeBoxesTop[nextLevel];
+                        case "Gem":
+                            child.GetComponent<SpriteRenderer>().color = levelColor[nextLevel];
+                            break;
+                        case "Spike":
+                            child.GetComponent<SpriteRenderer>().color = levelColor[nextLevel];
                             break;
                     }
                     
